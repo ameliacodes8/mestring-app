@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Family {
+  id        String  @id @default(uuid())
+  name      String
+  users     User[]
+  chores    Chore[]
+  goals     Goal[]
+  rewards   Reward[]
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String  @id
+  email     String  @unique
+  name      String?
+  role      Role    @default(child)
+  familyId  String?
+  family    Family? @relation(fields: [familyId], references: [id])
+  createdAt DateTime @default(now())
+
+  chores    Chore[] @relation("UserChores")
+  goals     Goal[]  @relation("UserGoals")
+}
+
+enum Role {
+  parent
+  child
+}
+
+model Chore {
+  id         String  @id @default(uuid())
+  title      String
+  description String?
+  points     Int     @default(1)
+  dueDate    DateTime?
+  status     ChoreStatus @default(pending)
+  familyId   String
+  family     Family @relation(fields: [familyId], references: [id])
+  assignedTo String?
+  assignee   User?  @relation("UserChores", fields: [assignedTo], references: [id])
+  createdBy  String?
+  creator    User?  @relation("UserChoresCreator", fields: [createdBy], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+enum ChoreStatus {
+  pending
+  completed
+  approved
+}
+
+model Goal {
+  id          String @id @default(uuid())
+  title       String
+  description String?
+  pointsTotal Int    @default(0)
+  status      GoalStatus @default(draft)
+  familyId    String
+  family      Family @relation(fields: [familyId], references: [id])
+  assignedTo  String?
+  assignee    User?  @relation("UserGoals", fields: [assignedTo], references: [id])
+  createdBy   String?
+  creator     User?  @relation("UserGoalsCreator", fields: [createdBy], references: [id])
+  steps       GoalStep[]
+  createdAt   DateTime @default(now())
+}
+
+enum GoalStatus {
+  draft
+  active
+  completed
+}
+
+model GoalStep {
+  id        String @id @default(uuid())
+  goalId    String
+  goal      Goal   @relation(fields: [goalId], references: [id])
+  title     String
+  instructions String?
+  mediaUrl  String?
+  order     Int
+  points    Int    @default(1)
+}
+
+model ProgressEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String
+  entityId   String
+  eventType  String
+  timestamp  DateTime @default(now())
+  notes      String?
+  mediaUrl   String?
+}
+
+model Reward {
+  id             String  @id @default(uuid())
+  familyId       String
+  family         Family @relation(fields: [familyId], references: [id])
+  title          String
+  pointsRequired Int
+  description    String?
+}
+
+model Redemption {
+  id        String  @id @default(uuid())
+  rewardId  String
+  reward    Reward  @relation(fields: [rewardId], references: [id])
+  userId    String
+  status    String  @default("requested")
+  timestamp DateTime @default(now())
+}

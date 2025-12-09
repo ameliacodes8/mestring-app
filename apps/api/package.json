@@ -1,0 +1,28 @@
+{
+  "name": "mestring-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --watch src --exec node --env-file=.env src/index.js",
+    "build": "echo \"No build step for JS\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "seed": "node --env-file=.env prisma/seed.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@prisma/client": "^5.19.1",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "prisma": "^5.19.1"
+  }
+}
