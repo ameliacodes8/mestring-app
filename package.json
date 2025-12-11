@@ -5,6 +5,9 @@
     "apps/web",
     "apps/api"
   ],
+  "overrides": {
+    "esbuild": "0.24.4"
+  },
   "scripts": {
     "dev:web": "npm --workspace apps/web run dev",
     "dev:api": "npm --workspace apps/api run dev",

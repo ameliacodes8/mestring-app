@@ -8,26 +8,37 @@ datasource db {
 }
 
 model Family {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
   users     User[]
   chores    Chore[]
   goals     Goal[]
   rewards   Reward[]
   createdAt DateTime @default(now())
+
+  choreTemplates ChoreTemplate[]
+  choreInstances ChoreInstance[]
 }
 
 model User {
-  id        String  @id
-  email     String  @unique
+  id        String   @id
+  email     String   @unique
   name      String?
-  role      Role    @default(child)
+  role      Role     @default(child)
   familyId  String?
-  family    Family? @relation(fields: [familyId], references: [id])
+  family    Family?  @relation(fields: [familyId], references: [id])
   createdAt DateTime @default(now())
 
-  chores    Chore[] @relation("UserChores")
-  goals     Goal[]  @relation("UserGoals")
+  chores Chore[] @relation("UserChores")
+  goals  Goal[]  @relation("UserGoals")
+
+  createdChores Chore[] @relation("UserChoresCreator")
+  createdGoals  Goal[]  @relation("UserGoalsCreator")
+
+  choreTemplates        ChoreTemplate[] @relation("DefaultChoreAssignee")
+  createdChoreTemplates ChoreTemplate[] @relation("ChoreTemplateCreator")
+  choreInstances        ChoreInstance[]
+  choreApprovals        ChoreApproval[]
 }
 
 enum Role {
@@ -36,19 +47,23 @@ enum Role {
 }
 
 model Chore {
-  id         String  @id @default(uuid())
-  title      String
+  id          String      @id @default(uuid())
+  title       String
   description String?
-  points     Int     @default(1)
-  dueDate    DateTime?
-  status     ChoreStatus @default(pending)
-  familyId   String
-  family     Family @relation(fields: [familyId], references: [id])
+  points      Int         @default(1)
+  dueDate     DateTime?
+  status      ChoreStatus @default(pending)
+
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id])
+
   assignedTo String?
-  assignee   User?  @relation("UserChores", fields: [assignedTo], references: [id])
-  createdBy  String?
-  creator    User?  @relation("UserChoresCreator", fields: [createdBy], references: [id])
-  createdAt  DateTime @default(now())
+  assignee   User?   @relation("UserChores", fields: [assignedTo], references: [id])
+
+  createdBy String?
+  creator   User?   @relation("UserChoresCreator", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 enum ChoreStatus {
@@ -58,19 +73,23 @@ enum ChoreStatus {
 }
 
 model Goal {
-  id          String @id @default(uuid())
+  id          String     @id @default(uuid())
   title       String
   description String?
-  pointsTotal Int    @default(0)
+  pointsTotal Int        @default(0)
   status      GoalStatus @default(draft)
-  familyId    String
-  family      Family @relation(fields: [familyId], references: [id])
-  assignedTo  String?
-  assignee    User?  @relation("UserGoals", fields: [assignedTo], references: [id])
-  createdBy   String?
-  creator     User?  @relation("UserGoalsCreator", fields: [createdBy], references: [id])
-  steps       GoalStep[]
-  createdAt   DateTime @default(now())
+
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id])
+
+  assignedTo String?
+  assignee   User?   @relation("UserGoals", fields: [assignedTo], references: [id])
+
+  createdBy String?
+  creator   User?   @relation("UserGoalsCreator", fields: [createdBy], references: [id])
+
+  steps     GoalStep[]
+  createdAt DateTime   @default(now())
 }
 
 enum GoalStatus {
@@ -80,14 +99,16 @@ enum GoalStatus {
 }
 
 model GoalStep {
-  id        String @id @default(uuid())
-  goalId    String
-  goal      Goal   @relation(fields: [goalId], references: [id])
-  title     String
+  id           String  @id @default(uuid())
+  goalId       String
+  goal         Goal    @relation(fields: [goalId], references: [id])
+  title        String
   instructions String?
-  mediaUrl  String?
-  order     Int
-  points    Int    @default(1)
+  mediaUrl     String?
+  order        Int
+  points       Int     @default(1)
+
+  @@unique([goalId, order])
 }
 
 model ProgressEvent {
@@ -104,17 +125,105 @@ model ProgressEvent {
 model Reward {
   id             String  @id @default(uuid())
   familyId       String
-  family         Family @relation(fields: [familyId], references: [id])
+  family         Family  @relation(fields: [familyId], references: [id])
   title          String
   pointsRequired Int
   description    String?
+
+  redemptions Redemption[]
 }
 
 model Redemption {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   rewardId  String
-  reward    Reward  @relation(fields: [rewardId], references: [id])
+  reward    Reward   @relation(fields: [rewardId], references: [id])
   userId    String
-  status    String  @default("requested")
+  status    String   @default("requested")
   timestamp DateTime @default(now())
+}
+
+/**
+ * NEW scalable recurring chore design
+ */
+
+enum RecurrenceType {
+  once
+  daily
+  weekly
+  monthly
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ApprovalPolicy {
+  any
+  all
+}
+
+model ChoreTemplate {
+  id          String  @id @default(uuid())
+  familyId    String
+  family      Family  @relation(fields: [familyId], references: [id])
+  title       String
+  description String?
+  points      Int     @default(1)
+
+  recurrence     RecurrenceType @default(once)
+  interval       Int            @default(1)
+  daysOfWeek     String[]
+  approvalPolicy ApprovalPolicy @default(any)
+
+  defaultAssignedTo String?
+  defaultAssignee   User?   @relation("DefaultChoreAssignee", fields: [defaultAssignedTo], references: [id])
+
+  createdBy String?
+  creator   User?   @relation("ChoreTemplateCreator", fields: [createdBy], references: [id])
+
+  instances ChoreInstance[]
+  createdAt DateTime        @default(now())
+
+  @@index([familyId, recurrence])
+}
+
+model ChoreInstance {
+  id         String        @id @default(uuid())
+  templateId String
+  template   ChoreTemplate @relation(fields: [templateId], references: [id])
+
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id])
+
+  assignedTo String
+  assignee   User   @relation(fields: [assignedTo], references: [id])
+
+  dueDate     DateTime?
+  status      ChoreStatus @default(pending)
+  completedAt DateTime?
+  approvedAt  DateTime?
+
+  points    Int             @default(1)
+  approvals ChoreApproval[]
+
+  createdAt DateTime @default(now())
+
+  @@index([familyId, assignedTo, status, dueDate])
+}
+
+model ChoreApproval {
+  id         String        @id @default(uuid())
+  instanceId String
+  instance   ChoreInstance @relation(fields: [instanceId], references: [id])
+
+  parentId String
+  parent   User   @relation(fields: [parentId], references: [id])
+
+  status    ApprovalStatus @default(pending)
+  decidedAt DateTime?
+
+  @@unique([instanceId, parentId])
+  @@index([parentId, status])
 }
