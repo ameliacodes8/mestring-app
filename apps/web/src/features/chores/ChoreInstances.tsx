@@ -65,7 +65,10 @@ export function ChoreInstances() {
               <div key={instance.id} className="p-3 border rounded">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="font-medium">Chore #{instance.id.slice(0, 8)}</div>
+                    <div className="font-medium">{instance.template?.title || 'Chore'}</div>
+                    {instance.template?.description && (
+                      <div className="text-sm text-gray-600">{instance.template.description}</div>
+                    )}
                     <div className="text-sm text-gray-600">
                       {instance.points} points
                       {instance.dueDate && ` • Due: ${new Date(instance.dueDate).toLocaleDateString()}`}
@@ -107,7 +110,10 @@ export function ChoreInstances() {
               <div key={instance.id} className="p-3 border rounded">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="font-medium">Chore #{instance.id.slice(0, 8)}</div>
+                    <div className="font-medium">{instance.template?.title || 'Chore'}</div>
+                    {instance.template?.description && (
+                      <div className="text-sm text-gray-600">{instance.template.description}</div>
+                    )}
                     <div className="text-sm text-gray-600">
                       Assigned to: {instance.assignedTo}
                     </div>

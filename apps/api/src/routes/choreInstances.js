@@ -64,6 +64,9 @@ router.get("/", async (req, res) => {
     }
     const instances = await prisma.choreInstance.findMany({
       where,
+      include: {
+        template: true,
+      },
       orderBy: { dueDate: "asc" },
     });
     res.json(instances);
