@@ -7,7 +7,8 @@
     "build": "echo \"No build step for JS\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "node --env-file=.env prisma/seed.js"
+    "seed": "node --env-file=.env prisma/seed.js",
+    "generate:today": "node --env-file=.env scripts/generateToday.js"
   },
   "dependencies": {
     "@prisma/client": "6.19.1",
