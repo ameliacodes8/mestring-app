@@ -1,0 +1,10 @@
+{
+  "familyId": "demo-family",
+  "title": "Vacuum top floor",
+  "points": 2,
+  "recurrence": "weekly",
+  "interval": 1,
+  "daysOfWeek": ["SA"],
+  "defaultAssignedTo": "child-1",
+  "createdBy": "demo-parent"
+}
