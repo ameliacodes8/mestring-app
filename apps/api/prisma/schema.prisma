@@ -39,6 +39,7 @@ model User {
   createdChoreTemplates ChoreTemplate[] @relation("ChoreTemplateCreator")
   choreInstances        ChoreInstance[]
   choreApprovals        ChoreApproval[]
+  pointsTransactions    PointsTransaction[]
 }
 
 enum Role {
@@ -226,4 +227,16 @@ model ChoreApproval {
 
   @@unique([instanceId, parentId])
   @@index([parentId, status])
+}
+
+model PointsTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  points    Int
+  source    String
+  sourceId  String?
+  timestamp DateTime @default(now())
+
+  @@index([userId, timestamp])
 }

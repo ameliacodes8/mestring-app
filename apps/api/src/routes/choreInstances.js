@@ -141,7 +141,16 @@ router.post("/:id/approve", async (req, res) => {
         where: { id },
         data: { status: "approved", approvedAt: new Date() },
       });
-      // Optional: log points assignment or create a ProgressEvent, etc.
+
+      // Award points to the child
+      await prisma.pointsTransaction.create({
+        data: {
+          userId: instance.assignedTo,
+          points: instance.points,
+          source: "chore_approval",
+          sourceId: instance.id,
+        },
+      });
     } else {
       finalInst = await prisma.choreInstance.findUnique({ where: { id } });
     }

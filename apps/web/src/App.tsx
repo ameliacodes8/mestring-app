@@ -4,10 +4,11 @@ import { AuthGate } from './auth/AuthGate';
 import { ChoreTemplates } from './features/chores/ChoreTemplates';
 import { ChoreInstances } from './features/chores/ChoreInstances';
 import { Goals } from './features/goals/Goals';
+import { PointsSummary } from './features/points/PointsSummary';
 
 function Root() {
   const { session } = useSupabase();
-  const [tab, setTab] = useState<'instances' | 'templates' | 'goals'>('instances');
+  const [tab, setTab] = useState<'instances' | 'templates' | 'goals' | 'points'>('instances');
 
   useEffect(() => {
     // you can load initial data or socket connection here
@@ -31,6 +32,12 @@ function Root() {
             My Chores
           </button>
           <button 
+            className={`btn ${tab === 'points' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setTab('points')}
+          >
+            Points
+          </button>
+          <button 
             className={`btn ${tab === 'templates' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
             onClick={() => setTab('templates')}
           >
@@ -47,6 +54,7 @@ function Root() {
 
       <main className="max-w-3xl mx-auto p-4">
         {tab === 'instances' && <ChoreInstances />}
+        {tab === 'points' && <PointsSummary />}
         {tab === 'templates' && <ChoreTemplates />}
         {tab === 'goals' && <Goals />}
       </main>

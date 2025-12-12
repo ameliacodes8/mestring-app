@@ -5,4 +5,4 @@ dist
 apps/api/.env
 apps/web/.env
 apps/api/prisma/dev.db
-apps/web/notes.txt
+**/notes.txt
