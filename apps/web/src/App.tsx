@@ -5,10 +5,11 @@ import { ChoreTemplates } from './features/chores/ChoreTemplates';
 import { ChoreInstances } from './features/chores/ChoreInstances';
 import { Goals } from './features/goals/Goals';
 import { PointsSummary } from './features/points/PointsSummary';
+import { ChoreCalendar } from './features/calendar/ChoreCalendar';
 
 function Root() {
   const { session } = useSupabase();
-  const [tab, setTab] = useState<'instances' | 'templates' | 'goals' | 'points'>('instances');
+  const [tab, setTab] = useState<'instances' | 'calendar' | 'points' | 'templates' | 'goals'>('instances');
 
   useEffect(() => {
     // you can load initial data or socket connection here
@@ -30,6 +31,12 @@ function Root() {
             onClick={() => setTab('instances')}
           >
             My Chores
+          </button>
+          <button 
+            className={`btn ${tab === 'calendar' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setTab('calendar')}
+          >
+            Calendar
           </button>
           <button 
             className={`btn ${tab === 'points' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
@@ -54,6 +61,7 @@ function Root() {
 
       <main className="max-w-3xl mx-auto p-4">
         {tab === 'instances' && <ChoreInstances />}
+        {tab === 'calendar' && <ChoreCalendar />}
         {tab === 'points' && <PointsSummary />}
         {tab === 'templates' && <ChoreTemplates />}
         {tab === 'goals' && <Goals />}
