@@ -6,10 +6,13 @@ import { ChoreInstances } from './features/chores/ChoreInstances';
 import { Goals } from './features/goals/Goals';
 import { PointsSummary } from './features/points/PointsSummary';
 import { ChoreCalendar } from './features/calendar/ChoreCalendar';
+import { ChildDashboard } from './features/dashboard/ChildDashboard';
+import { ParentDashboard } from './features/dashboard/ParentDashboard';
 
 function Root() {
   const { session } = useSupabase();
-  const [tab, setTab] = useState<'instances' | 'calendar' | 'points' | 'templates' | 'goals'>('instances');
+  const userRole = session?.user.user_metadata?.role || 'child';
+  const [tab, setTab] = useState<'dashboard' | 'instances' | 'calendar' | 'points' | 'templates' | 'goals'>('dashboard');
 
   useEffect(() => {
     // you can load initial data or socket connection here
@@ -27,10 +30,16 @@ function Root() {
       <nav className="sticky top-[73px] z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
           <button 
+            className={`btn ${tab === 'dashboard' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setTab('dashboard')}
+          >
+            🏠 Home
+          </button>
+          <button 
             className={`btn ${tab === 'instances' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
             onClick={() => setTab('instances')}
           >
-            My Chores
+            All Chores
           </button>
           <button 
             className={`btn ${tab === 'calendar' ? '' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
@@ -60,6 +69,9 @@ function Root() {
       </nav>
 
       <main className="max-w-3xl mx-auto p-4">
+        {tab === 'dashboard' && (
+          userRole === 'parent' ? <ParentDashboard /> : <ChildDashboard />
+        )}
         {tab === 'instances' && <ChoreInstances />}
         {tab === 'calendar' && <ChoreCalendar />}
         {tab === 'points' && <PointsSummary />}
