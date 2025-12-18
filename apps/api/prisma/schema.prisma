@@ -201,10 +201,11 @@ model ChoreInstance {
   assignedTo String
   assignee   User   @relation(fields: [assignedTo], references: [id])
 
-  dueDate     DateTime?
-  status      ChoreStatus @default(pending)
-  completedAt DateTime?
-  approvedAt  DateTime?
+  dueDate           DateTime?
+  status            ChoreStatus @default(pending)
+  completedAt       DateTime?
+  approvedAt        DateTime?
+  rejectionMessage  String?
 
   points    Int             @default(1)
   approvals ChoreApproval[]

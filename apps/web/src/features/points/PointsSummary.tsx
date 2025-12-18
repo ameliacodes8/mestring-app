@@ -5,7 +5,7 @@ import { useSupabase } from "../../auth/SupabaseContext";
 export function PointsSummary() {
   const api = useApi();
   const { session } = useSupabase();
-  const userId = session?.user?.id;
+  const userId = localStorage.getItem('demo-user-id') || session?.user?.id;
 
   const { data: pointsData, isLoading } = useQuery({
     queryKey: ["points-summary", userId],

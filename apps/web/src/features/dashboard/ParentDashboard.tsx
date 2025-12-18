@@ -14,13 +14,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../api/client";
 import { useSupabase } from "../../auth/SupabaseContext";
+import { useState } from "react";
 
 export function ParentDashboard() {
   const api = useApi();
   const qc = useQueryClient();
   const { session } = useSupabase();
   const familyId = session?.user.user_metadata?.family_id || "demo-family";
-  const userId = session?.user.id || "demo-parent";
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id || "demo-parent";
+  
+  // Rejection modal state
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
 
   // Fetch all chore instances for the family
   const { data: instances = [], isLoading } = useQuery({
@@ -48,6 +53,30 @@ export function ParentDashboard() {
   const approveInstance = useMutation({
     mutationFn: async (id: string) =>
       (await api.post(`/chore-instances/${id}/approve`, { parentId: userId }))
+        .data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chore-instances", familyId] });
+      qc.invalidateQueries({ queryKey: ["leaderboard", familyId] });
+    },
+  });
+
+  // Reject chore mutation
+  const rejectInstance = useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) =>
+      (await api.post(`/chore-instances/${id}/reject`, { parentId: userId, message }))
+        .data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chore-instances", familyId] });
+      qc.invalidateQueries({ queryKey: ["leaderboard", familyId] });
+      setRejectingId(null);
+      setRejectionMessage("");
+    },
+  });
+
+  // Unapprove chore mutation
+  const unapproveInstance = useMutation({
+    mutationFn: async (id: string) =>
+      (await api.post(`/chore-instances/${id}/unapprove`, { parentId: userId }))
         .data,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chore-instances", familyId] });
@@ -147,13 +176,22 @@ export function ParentDashboard() {
                       </p>
                     )}
                   </div>
-                  <button
-                    className="btn btn-sm ml-3"
-                    onClick={() => approveInstance.mutate(chore.id)}
-                    disabled={approveInstance.isPending}
-                  >
-                    Approve
-                  </button>
+                  <div className="flex gap-2 ml-3">
+                    <button
+                      className="btn btn-sm bg-green-600 hover:bg-green-700"
+                      onClick={() => approveInstance.mutate(chore.id)}
+                      disabled={approveInstance.isPending}
+                    >
+                      ✓ Approve
+                    </button>
+                    <button
+                      className="btn btn-sm bg-red-600 hover:bg-red-700"
+                      onClick={() => setRejectingId(chore.id)}
+                      disabled={rejectInstance.isPending}
+                    >
+                      ✗ Reject
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -279,8 +317,23 @@ export function ParentDashboard() {
                     })}
                   </p>
                 </div>
-                <div className="text-sm font-semibold text-gray-700">
-                  {chore.points} pts
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-gray-700">
+                    {chore.points} pts
+                  </div>
+                  {chore.status === "approved" && (
+                    <button
+                      className="text-xs text-red-600 hover:text-red-700 underline"
+                      onClick={() => {
+                        if (confirm("Undo this approval? Points will be deducted.")) {
+                          unapproveInstance.mutate(chore.id);
+                        }
+                      }}
+                      disabled={unapproveInstance.isPending}
+                    >
+                      undo
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -296,6 +349,47 @@ export function ParentDashboard() {
           <p className="text-gray-600 text-sm mt-1">
             No activity yet today. Check back later!
           </p>
+        </div>
+      )}
+
+      {/* ===== REJECTION MODAL ===== */}
+      {rejectingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-3">Reject Chore</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please explain to your child why this chore needs to be redone:
+            </p>
+            <textarea
+              className="input w-full min-h-[100px]"
+              placeholder="e.g., 'Please vacuum under the furniture too' or 'Some spots were missed'"
+              value={rejectionMessage}
+              onChange={(e) => setRejectionMessage(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                className="btn flex-1"
+                onClick={() => {
+                  setRejectingId(null);
+                  setRejectionMessage("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn bg-red-600 hover:bg-red-700 flex-1"
+                onClick={() => {
+                  if (rejectionMessage.trim()) {
+                    rejectInstance.mutate({ id: rejectingId, message: rejectionMessage });
+                  }
+                }}
+                disabled={!rejectionMessage.trim() || rejectInstance.isPending}
+              >
+                {rejectInstance.isPending ? "Rejecting..." : "Send & Reject"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

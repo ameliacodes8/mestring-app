@@ -76,23 +76,74 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Create a new chore instance (manual assignment)
+router.post("/", async (req, res) => {
+  try {
+    const { templateId, familyId, assignedTo, points, dueDate } = req.body;
+
+    if (!familyId || !assignedTo) {
+      return res
+        .status(400)
+        .json({ error: "familyId and assignedTo required" });
+    }
+
+    const instance = await prisma.choreInstance.create({
+      data: {
+        templateId,
+        familyId,
+        assignedTo,
+        points: points || 1,
+        dueDate: dueDate ? new Date(dueDate) : new Date(),
+        status: "pending",
+      },
+      include: {
+        template: true,
+      },
+    });
+
+    res.status(201).json(instance);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to create instance" });
+  }
+});
+
 // Child completes instance
 router.post("/:id/complete", async (req, res) => {
   try {
     const { id } = req.params;
     const inst = await prisma.choreInstance.update({
       where: { id },
-      data: { status: "completed", completedAt: new Date() },
+      data: {
+        status: "completed",
+        completedAt: new Date(),
+        rejectionMessage: null,
+      },
     });
 
-    // Create approvals for parents in the family
+    // Get or create approvals for parents in the family
     const parents = await prisma.user.findMany({
       where: { familyId: inst.familyId, role: "parent" },
     });
+
     if (parents.length > 0) {
-      await prisma.choreApproval.createMany({
-        data: parents.map((p) => ({ instanceId: inst.id, parentId: p.id })),
+      // Check if approvals already exist (from previous completion/rejection cycle)
+      const existingApprovals = await prisma.choreApproval.findMany({
+        where: { instanceId: inst.id },
       });
+
+      if (existingApprovals.length > 0) {
+        // Reset existing approvals to pending
+        await prisma.choreApproval.updateMany({
+          where: { instanceId: inst.id },
+          data: { status: "pending", decidedAt: null },
+        });
+      } else {
+        // Create new approvals
+        await prisma.choreApproval.createMany({
+          data: parents.map((p) => ({ instanceId: inst.id, parentId: p.id })),
+        });
+      }
     }
 
     res.json(inst);
@@ -159,6 +210,91 @@ router.post("/:id/approve", async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to approve instance" });
+  }
+});
+
+// Parent rejects instance
+router.post("/:id/reject", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { parentId, message } = req.body;
+    if (!parentId) return res.status(400).json({ error: "parentId required" });
+
+    // Mark approval as rejected
+    await prisma.choreApproval.update({
+      where: { instanceId_parentId: { instanceId: id, parentId } },
+      data: { status: "rejected", decidedAt: new Date() },
+    });
+
+    // Reset instance status to pending and add rejection message
+    const instance = await prisma.choreInstance.update({
+      where: { id },
+      data: {
+        status: "pending",
+        completedAt: null,
+        rejectionMessage: message || "Please redo this chore.",
+      },
+      include: { template: true },
+    });
+
+    res.json(instance);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to reject instance" });
+  }
+});
+
+// Parent unapproves/reverts an approved instance
+router.post("/:id/unapprove", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { parentId } = req.body;
+    if (!parentId) return res.status(400).json({ error: "parentId required" });
+
+    // Get the instance to check points
+    const instance = await prisma.choreInstance.findUnique({
+      where: { id },
+      include: { template: true },
+    });
+
+    if (!instance) {
+      return res.status(404).json({ error: "Instance not found" });
+    }
+
+    if (instance.status !== "approved") {
+      return res.status(400).json({ error: "Instance is not approved" });
+    }
+
+    // Reset instance status to completed (back to pending approval)
+    const updatedInstance = await prisma.choreInstance.update({
+      where: { id },
+      data: {
+        status: "completed",
+        approvedAt: null,
+      },
+      include: { template: true },
+    });
+
+    // Reset all approvals to pending
+    await prisma.choreApproval.updateMany({
+      where: { instanceId: id },
+      data: { status: "pending", decidedAt: null },
+    });
+
+    // Reverse the points transaction by creating a negative transaction
+    await prisma.pointsTransaction.create({
+      data: {
+        userId: instance.assignedTo,
+        points: -instance.points, // Negative to deduct points
+        source: "chore_unapproval",
+        sourceId: instance.id,
+      },
+    });
+
+    res.json(updatedInstance);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to unapprove instance" });
   }
 });
 

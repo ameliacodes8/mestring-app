@@ -13,6 +13,7 @@ import goalsRouter from "./routes/goals.js";
 import choreTemplatesRouter from "./routes/choreTemplates.js";
 import choreInstancesRouter from "./routes/choreInstances.js";
 import pointsRouter from "./routes/points.js";
+import usersRouter from "./routes/users.js";
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,7 @@ app.use("/goals", goalsRouter);
 app.use("/chore-templates", choreTemplatesRouter);
 app.use("/chore-instances", choreInstancesRouter);
 app.use("/points", pointsRouter);
+app.use("/users", usersRouter);
 
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {

@@ -19,7 +19,7 @@ export function ChildDashboard() {
   const qc = useQueryClient();
   const { session } = useSupabase();
   const familyId = session?.user.user_metadata?.family_id || "demo-family";
-  const userId = session?.user.id || "child-1";
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id || "child-1";
 
   // Fetch all chore instances for this family
   const { data: instances = [], isLoading } = useQuery({
@@ -160,6 +160,19 @@ export function ChildDashboard() {
                         {chore.template.description}
                       </p>
                     )}
+                    
+                    {/* Show rejection message if present */}
+                    {chore.rejectionMessage && chore.status === "pending" && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                        <p className="text-sm font-semibold text-red-800">
+                          ⚠️ Parent's Feedback:
+                        </p>
+                        <p className="text-sm text-red-700 mt-1">
+                          {chore.rejectionMessage}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-sm font-medium text-indigo-600">
                         {chore.points} points

@@ -35,8 +35,8 @@ export function ChoreCalendar() {
   const { session } = useSupabase();
   // Extract user info with fallbacks for demo/testing
   const familyId = session?.user.user_metadata?.family_id || "demo-family";
-  const userId = session?.user.id || "child-1";
-  const userRole = session?.user.user_metadata?.role || "child";
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id || "child-1";
+  const userRole = localStorage.getItem('demo-user-role') || session?.user.user_metadata?.role || "child";
 
   // Local state for calendar view type (month, week, day, agenda)
   const [view, setView] = useState<"month" | "week" | "day" | "agenda">("week");

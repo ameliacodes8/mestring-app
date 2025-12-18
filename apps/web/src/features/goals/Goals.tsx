@@ -7,6 +7,7 @@ export function Goals() {
   const qc = useQueryClient();
   const { session } = useSupabase();
   const familyId = session?.user.user_metadata?.family_id || 'demo-family';
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id;
 
   const goals = useQuery({
     queryKey: ['goals', familyId],
@@ -30,7 +31,7 @@ export function Goals() {
             title: fd.get('title'),
             description: fd.get('description'),
             familyId,
-            assignedTo: session?.user.id
+            assignedTo: userId
           } as any);
           (e.target as HTMLFormElement).reset();
         }}

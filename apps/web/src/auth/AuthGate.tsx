@@ -1,5 +1,6 @@
 import { useSupabase } from './SupabaseContext';
 import { useState } from 'react';
+import { UserSwitcher } from '../features/testing/UserSwitcher';
 
 export function AuthGate() {
   const { supabase, session } = useSupabase();
@@ -20,6 +21,11 @@ export function AuthGate() {
     await supabase.auth.signOut();
   }
 
+  // Show user switcher for testing (since auth is disabled)
+  return <UserSwitcher />;
+
+  // Original auth UI (commented out while testing)
+  /*
   if (session) {
     return (
       <div className="flex items-center gap-2">
@@ -37,4 +43,5 @@ export function AuthGate() {
       <button className="btn" type="button" onClick={signUp}>Sign up</button>
     </form>
   );
+  */
 }

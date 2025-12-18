@@ -7,17 +7,31 @@ export function ChoreTemplates() {
   const qc = useQueryClient();
   const { session } = useSupabase();
   const familyId = session?.user.user_metadata?.family_id || 'demo-family';
-  const userId = session?.user.id || 'demo-parent';
-  const userRole = session?.user.user_metadata?.role || 'parent';
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id || 'demo-parent';
+  const userRole = localStorage.getItem('demo-user-role') || session?.user.user_metadata?.role || 'parent';
 
   const templates = useQuery({
     queryKey: ['chore-templates', familyId],
     queryFn: async () => (await api.get(`/chore-templates?familyId=${familyId}`)).data
   });
 
+  const users = useQuery({
+    queryKey: ['users', familyId],
+    queryFn: async () => (await api.get(`/users?familyId=${familyId}`)).data
+  });
+
+  const children = (users.data || []).filter((u: any) => u.role === 'child');
+
   const createTemplate = useMutation({
     mutationFn: async (payload: any) => (await api.post('/chore-templates', payload)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['chore-templates', familyId] })
+  });
+
+  const createInstance = useMutation({
+    mutationFn: async (payload: any) => (await api.post('/chore-instances', payload)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chore-instances', familyId] });
+    }
   });
 
   if (userRole !== 'parent') {
@@ -116,6 +130,16 @@ export function ChoreTemplates() {
         </div>
 
         <div>
+          <label className="block text-sm text-gray-700 mb-1">Default Assignee</label>
+          <select className="input w-full" name="defaultAssignedTo">
+            <option value="">None (assign manually)</option>
+            {children.map((child: any) => (
+              <option key={child.id} value={child.id}>{child.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <label className="block text-sm text-gray-700 mb-1">Approval Policy</label>
           <select className="input w-full" name="approvalPolicy" defaultValue="any">
             <option value="any">Any parent can approve</option>
@@ -135,12 +159,41 @@ export function ChoreTemplates() {
         
         {(templates.data || []).map((t: any) => (
           <div key={t.id} className="p-3 border rounded">
-            <div className="font-medium">{t.title}</div>
-            {t.description && <p className="text-sm text-gray-600">{t.description}</p>}
-            <div className="text-sm text-gray-500 mt-1">
-              {t.points} points • {t.recurrence}
-              {t.daysOfWeek?.length > 0 && ` (${t.daysOfWeek.join(', ')})`}
-              {' • '}{t.approvalPolicy} approval
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="font-medium">{t.title}</div>
+                {t.description && <p className="text-sm text-gray-600">{t.description}</p>}
+                <div className="text-sm text-gray-500 mt-1">
+                  {t.points} points • {t.recurrence}
+                  {t.daysOfWeek?.length > 0 && ` (${t.daysOfWeek.join(', ')})`}
+                  {' • '}{t.approvalPolicy} approval
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <select 
+                  className="input text-sm py-1 px-2 min-h-0"
+                  onChange={(e) => {
+                    const childId = e.target.value;
+                    if (childId) {
+                      createInstance.mutate({
+                        templateId: t.id,
+                        familyId,
+                        assignedTo: childId,
+                        points: t.points,
+                        dueDate: new Date().toISOString()
+                      });
+                      e.target.value = ''; // Reset
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Assign to...</option>
+                  {children.map((child: any) => (
+                    <option key={child.id} value={child.id}>{child.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         ))}

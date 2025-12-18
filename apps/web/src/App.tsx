@@ -11,7 +11,15 @@ import { ParentDashboard } from './features/dashboard/ParentDashboard';
 
 function Root() {
   const { session } = useSupabase();
-  const userRole = session?.user.user_metadata?.role || 'child';
+  
+  // FOR TESTING: Read from localStorage if auth is disabled
+  const storedUserId = localStorage.getItem("demo-user-id");
+  const storedRole = localStorage.getItem("demo-user-role");
+  
+  // Use localStorage values for demo, fallback to session for real auth
+  const userId = storedUserId || session?.user.id || 'child-1';
+  const userRole = storedRole || session?.user.user_metadata?.role || 'child';
+  
   const [tab, setTab] = useState<'dashboard' | 'instances' | 'calendar' | 'points' | 'templates' | 'goals'>('dashboard');
 
   useEffect(() => {

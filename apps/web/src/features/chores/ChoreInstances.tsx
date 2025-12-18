@@ -1,14 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../api/client';
 import { useSupabase } from '../../auth/SupabaseContext';
+import { useState } from 'react';
 
 export function ChoreInstances() {
   const api = useApi();
   const qc = useQueryClient();
   const { session } = useSupabase();
   const familyId = session?.user.user_metadata?.family_id || 'demo-family';
-  const userId = session?.user.id || 'child-1';
-  const userRole = session?.user.user_metadata?.role || 'child';
+  const userId = localStorage.getItem('demo-user-id') || session?.user.id || 'child-1';
+  const userRole = localStorage.getItem('demo-user-role') || session?.user.user_metadata?.role || 'child';
+  
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
 
   const instances = useQuery({
     queryKey: ['chore-instances', familyId],
@@ -28,6 +32,22 @@ export function ChoreInstances() {
   const approveInstance = useMutation({
     mutationFn: async (id: string) => (await api.post(`/chore-instances/${id}/approve`, { parentId: userId })).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['chore-instances', familyId] })
+  });
+
+  const rejectInstance = useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) =>
+      (await api.post(`/chore-instances/${id}/reject`, { parentId: userId, message })).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chore-instances', familyId] });
+      setRejectingId(null);
+      setRejectionMessage("");
+    },
+  });
+
+  const unapproveInstance = useMutation({
+    mutationFn: async (id: string) =>
+      (await api.post(`/chore-instances/${id}/unapprove`, { parentId: userId })).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['chore-instances', familyId] }),
   });
 
   const myInstances = (instances.data || []).filter((i: any) => i.assignedTo === userId);
@@ -123,13 +143,22 @@ export function ChoreInstances() {
                     </div>
                   </div>
                   
-                  <button 
-                    className="btn btn-sm bg-green-600 hover:bg-green-700"
-                    onClick={() => approveInstance.mutate(instance.id)}
-                    disabled={approveInstance.isPending}
-                  >
-                    Approve
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      className="btn btn-sm bg-green-600 hover:bg-green-700"
+                      onClick={() => approveInstance.mutate(instance.id)}
+                      disabled={approveInstance.isPending}
+                    >
+                      ✓ Approve
+                    </button>
+                    <button 
+                      className="btn btn-sm bg-red-600 hover:bg-red-700"
+                      onClick={() => setRejectingId(instance.id)}
+                      disabled={rejectInstance.isPending}
+                    >
+                      ✗ Reject
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -145,21 +174,82 @@ export function ChoreInstances() {
         
         <div className="space-y-2">
           {(instances.data || []).map((instance: any) => (
-            <div key={instance.id} className="p-2 border rounded text-sm">
-              <div className="flex justify-between items-center">
-                <span>#{instance.id.slice(0, 8)}</span>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  instance.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  instance.status === 'completed' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {instance.status}
-                </span>
+            <div key={instance.id} className="p-3 border rounded">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex-1">
+                  <div className="font-medium">{instance.template?.title || 'Chore'}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    #{instance.id.slice(0, 8)} • {instance.points} pts • Assigned to: {instance.assignedTo}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    instance.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    instance.status === 'completed' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {instance.status}
+                  </span>
+                  {userRole === 'parent' && instance.status === 'approved' && (
+                    <button
+                      className="text-xs text-red-600 hover:text-red-700 underline"
+                      onClick={() => {
+                        if (confirm("Undo this approval? Points will be deducted.")) {
+                          unapproveInstance.mutate(instance.id);
+                        }
+                      }}
+                      disabled={unapproveInstance.isPending}
+                    >
+                      undo
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* ===== REJECTION MODAL ===== */}
+      {rejectingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-3">Reject Chore</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please explain to your child why this chore needs to be redone:
+            </p>
+            <textarea
+              className="input w-full min-h-[100px]"
+              placeholder="e.g., 'Please vacuum under the furniture too' or 'Some spots were missed'"
+              value={rejectionMessage}
+              onChange={(e) => setRejectionMessage(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                className="btn flex-1"
+                onClick={() => {
+                  setRejectingId(null);
+                  setRejectionMessage("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn bg-red-600 hover:bg-red-700 flex-1"
+                onClick={() => {
+                  if (rejectionMessage.trim()) {
+                    rejectInstance.mutate({ id: rejectingId, message: rejectionMessage });
+                  }
+                }}
+                disabled={!rejectionMessage.trim() || rejectInstance.isPending}
+              >
+                {rejectInstance.isPending ? "Rejecting..." : "Send & Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
