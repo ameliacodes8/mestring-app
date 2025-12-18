@@ -146,14 +146,29 @@ export function ParentDashboard() {
 
       {/* ===== PENDING APPROVALS ALERT ===== */}
       {pendingApprovals.length > 0 && (
-        <div className="card border-yellow-300 bg-yellow-50">
+        <div className="card border-red-300 bg-red-50">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold">
+            <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center font-bold">
               {pendingApprovals.length}
             </div>
             <h2 className="text-lg font-semibold">
               Pending Approvals
             </h2>
+            {pendingApprovals.length > 1 && (
+              <button
+                className="btn btn-sm bg-green-600 hover:bg-green-700 ml-auto"
+                onClick={() => {
+                  if (confirm(`Approve all ${pendingApprovals.length} chores?`)) {
+                    pendingApprovals.forEach((chore: any) => {
+                      approveInstance.mutate(chore.id);
+                    });
+                  }
+                }}
+                disabled={approveInstance.isPending}
+              >
+                ✓ Approve All
+              </button>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -245,15 +260,27 @@ export function ParentDashboard() {
                     {index + 1}
                   </div>
                   <div>
-                    <div className="font-semibold">
+                    <div className="font-semibold flex items-center gap-2">
                       {child.name || "Child"}
+                      {/* Trend arrow */}
+                      {child.weeklyPoints > child.lastWeekPoints && (
+                        <span className="text-green-300 text-sm">↑</span>
+                      )}
+                      {child.weeklyPoints < child.lastWeekPoints && (
+                        <span className="text-red-300 text-sm">↓</span>
+                      )}
                     </div>
-                    <div className="text-xs text-white/80">This week</div>
+                    <div className="text-xs text-white/80">
+                      {child.weeklyPoints} this week
+                      {child.lastWeekPoints > 0 && ` (${child.lastWeekPoints} last week)`}
+                    </div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {child.totalPoints}
-                  <span className="text-sm font-normal ml-1">pts</span>
+                <div className="text-right">
+                  <div className="text-2xl font-bold">
+                    {child.totalPoints}
+                  </div>
+                  <div className="text-xs text-white/80">total</div>
                 </div>
               </div>
             ))}

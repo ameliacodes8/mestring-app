@@ -66,6 +66,13 @@ router.get("/", async (req, res) => {
       where,
       include: {
         template: true,
+        approvals: {
+          include: {
+            parent: {
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
       orderBy: { dueDate: "asc" },
     });

@@ -116,15 +116,60 @@ export function ChildDashboard() {
       {/* ===== WEEKLY POINTS SUMMARY ===== */}
       <div className="card bg-gradient-to-r from-green-500 to-emerald-600 text-white">
         <h2 className="text-lg font-semibold mb-2">This Week's Points</h2>
-        <div className="flex items-baseline gap-2">
+        
+        <div className="flex items-baseline gap-2 mb-3">
           <div className="text-4xl font-bold">
             {pointsData?.weeklyPoints || 0}
           </div>
           <div className="text-white/80">points earned</div>
+          
+          {/* Week-over-week comparison */}
+          {pointsData?.lastWeekPoints !== undefined && (
+            <div className="ml-auto">
+              {pointsData.weeklyPoints > pointsData.lastWeekPoints ? (
+                <span className="text-sm bg-white/20 px-2 py-1 rounded">
+                  ↑ {pointsData.weeklyPoints - pointsData.lastWeekPoints} vs last week
+                </span>
+              ) : pointsData.weeklyPoints < pointsData.lastWeekPoints ? (
+                <span className="text-sm bg-white/20 px-2 py-1 rounded">
+                  ↓ {pointsData.lastWeekPoints - pointsData.weeklyPoints} vs last week
+                </span>
+              ) : (
+                <span className="text-sm bg-white/20 px-2 py-1 rounded">
+                  = Same as last week
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <div className="mt-3 text-sm text-white/90">
-          Total: {pointsData?.totalPoints || 0} points
-        </div>
+
+        {/* Progress bar to next reward */}
+        {pointsData?.nextReward ? (
+          <div className="mt-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span>Next reward: {pointsData.nextReward.title}</span>
+              <span>{pointsData.totalPoints} / {pointsData.nextReward.pointsRequired}</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-2">
+              <div
+                className="bg-white rounded-full h-2 transition-all duration-500"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    (pointsData.totalPoints / pointsData.nextReward.pointsRequired) * 100
+                  )}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-white/80 mt-1">
+              {pointsData.nextReward.pointsRequired - pointsData.totalPoints} more points to go!
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 text-sm text-white/90">
+            Total: {pointsData?.totalPoints || 0} points
+          </div>
+        )}
       </div>
 
       {/* ===== TODAY'S CHORES ===== */}
@@ -231,29 +276,56 @@ export function ChildDashboard() {
       {/* ===== RECENT ACTIVITY ===== */}
       {recentCompleted.length > 0 && (
         <div className="card">
-          <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
-          <div className="space-y-2">
-            {recentCompleted.map((chore: any) => (
-              <div
-                key={chore.id}
-                className="flex items-center justify-between py-2 border-b last:border-b-0"
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-sm">
-                    {chore.template?.title}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {chore.status === "approved" ? "Approved" : "Completed"} •{" "}
-                    {new Date(
-                      chore.approvedAt || chore.completedAt
-                    ).toLocaleDateString()}
+          <h2 className="text-lg font-semibold mb-3">Recent Activity 🎉</h2>
+          <div className="space-y-3">
+            {recentCompleted.map((chore: any) => {
+              const approver = chore.approvals?.find((a: any) => a.status === "approved")?.parent;
+              const isApproved = chore.status === "approved";
+              
+              return (
+                <div
+                  key={chore.id}
+                  className={`p-3 rounded-lg ${
+                    isApproved ? "bg-green-50 border border-green-200" : "bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {chore.template?.title}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {isApproved && approver ? (
+                          <span className="text-green-700">
+                            ✓ {approver.name || "Parent"} approved this{" "}
+                            <span className="font-semibold">+{chore.points} pts</span>
+                          </span>
+                        ) : (
+                          <span>
+                            Completed • Waiting for approval
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(
+                          chore.approvedAt || chore.completedAt
+                        ).toLocaleString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                    {isApproved && (
+                      <div className="text-2xl ml-2">
+                        {["🎉", "⭐", "🌟", "✨", "🏆"][Math.floor(Math.random() * 5)]}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="text-green-600 font-semibold text-sm">
-                  +{chore.points} pts
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
