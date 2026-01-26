@@ -39,8 +39,8 @@ Mestring is a full-stack family chore management application with gamification e
 ```mermaid
 graph TB
     subgraph "Frontend - React App (Port 5173)"
-        App[App.tsx<br/>Tab Navigation]
-        Auth[AuthGate.tsx<br/>User Switcher]
+        App["App.tsx\nTab Navigation"]
+        Auth["AuthGate.tsx\nUser Switcher"]
 
         subgraph "Feature Modules"
             Dashboard[Dashboard]
@@ -52,41 +52,41 @@ graph TB
         end
 
         subgraph "Dashboard Components"
-            ChildDash[ChildDashboard.tsx<br/>Today's Tasks<br/>Weekly Points<br/>Recent Activity]
-            ParentDash[ParentDashboard.tsx<br/>Pending Approvals<br/>Family Leaderboard<br/>Activity Timeline]
+            ChildDash["ChildDashboard.tsx\nToday's Tasks\nWeekly Points\nRecent Activity"]
+            ParentDash["ParentDashboard.tsx\nPending Approvals\nFamily Leaderboard\nActivity Timeline"]
         end
 
         subgraph "Chores Components"
-            Templates[ChoreTemplates.tsx<br/>Create Templates<br/>Assign Chores]
-            Instances[ChoreInstances.tsx<br/>View All Chores<br/>Complete/Approve]
+            Templates["ChoreTemplates.tsx\nCreate Templates\nAssign Chores"]
+            Instances["ChoreInstances.tsx\nView All Chores\nComplete/Approve"]
         end
 
         subgraph "Other Components"
-            Cal[ChoreCalendar.tsx<br/>Month/Week/Day Views<br/>Color-coded Events]
-            PointsSum[PointsSummary.tsx<br/>Total & Weekly Points<br/>Leaderboard]
-            GoalComp[Goals.tsx<br/>Goal Management]
-            UserSwitch[UserSwitcher.tsx<br/>Demo Mode Toggle]
+            Cal["ChoreCalendar.tsx\nMonth/Week/Day Views\nColor-coded Events"]
+            PointsSum["PointsSummary.tsx\nTotal & Weekly Points\nLeaderboard"]
+            GoalComp["Goals.tsx\nGoal Management"]
+            UserSwitch["UserSwitcher.tsx\nDemo Mode Toggle"]
         end
 
-        APIClient[api/client.ts<br/>Axios Instance<br/>TanStack Query]
-        SupaContext[SupabaseContext.tsx<br/>Auth State]
-        DemoConfig[config/demo.ts<br/>Demo Mode Config]
+        APIClient["api/client.ts\nAxios Instance\nTanStack Query"]
+        SupaContext["SupabaseContext.tsx\nAuth State"]
+        DemoConfig["config/demo.ts\nDemo Mode Config"]
     end
 
     subgraph "Backend - Express API (Port 3001)"
-        Server[index.js<br/>Express Server<br/>Socket.IO]
+        Server["index.js\nExpress Server\nSocket.IO"]
 
         subgraph "API Routes"
-            ChoreTemplateRoute[choreTemplates.js<br/>GET, POST templates]
-            ChoreInstanceRoute[choreInstances.js<br/>CRUD instances<br/>Complete/Approve/Reject]
-            PointsRoute[points.js<br/>Summary<br/>Leaderboard]
-            UsersRoute[users.js<br/>Family Members]
-            GoalsRoute[goals.js]
-            ChoresRoute[chores.js<br/>Legacy]
+            ChoreTemplateRoute["choreTemplates.js\nGET, POST templates"]
+            ChoreInstanceRoute["choreInstances.js\nCRUD instances\nComplete/Approve/Reject"]
+            PointsRoute["points.js\nSummary\nLeaderboard"]
+            UsersRoute["users.js\nFamily Members"]
+            GoalsRoute["goals.js"]
+            ChoresRoute["chores.js\nLegacy"]
         end
 
-        Middleware[auth.js<br/>JWT Verification<br/>(Disabled)]
-        PrismaClient[db.js<br/>Prisma Client]
+        Middleware["auth.js\nJWT Verification\n(Disabled)"]
+        PrismaClient["db.js\nPrisma Client"]
     end
 
     subgraph "Database - PostgreSQL (Supabase)"
@@ -96,23 +96,23 @@ graph TB
         end
 
         subgraph "Chore System"
-            TemplateModel[(ChoreTemplate<br/>Recurrence Rules)]
-            InstanceModel[(ChoreInstance<br/>Actual Tasks)]
-            ApprovalModel[(ChoreApproval<br/>Parent Approvals)]
+            TemplateModel["(ChoreTemplate\nRecurrence Rules)"]
+            InstanceModel["(ChoreInstance\nActual Tasks)"]
+            ApprovalModel["(ChoreApproval\nParent Approvals)"]
         end
 
         subgraph "Gamification"
-            PointsModel[(PointsTransaction<br/>Immutable Ledger)]
-            GoalModel[(Goal)]
-            StepModel[(GoalStep)]
-            RewardModel[(Reward)]
-            RedemptionModel[(Redemption)]
+            PointsModel["(PointsTransaction\nImmutable Ledger)"]
+            GoalModel["(Goal)"]
+            StepModel["(GoalStep)"]
+            RewardModel["(Reward)"]
+            RedemptionModel["(Redemption)"]
         end
     end
 
     subgraph "External Services"
-        Supabase[Supabase<br/>Auth + Database<br/>Storage]
-        SocketIO[Socket.IO<br/>Real-time Updates<br/>Family Rooms]
+        Supabase["Supabase\nAuth + Database\nStorage"]
+        SocketIO["Socket.IO\nReal-time Updates\nFamily Rooms"]
     end
 
     %% Frontend Connections
