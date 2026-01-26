@@ -94,12 +94,32 @@ router.post("/", async (req, res) => {
         .json({ error: "familyId and assignedTo required" });
     }
 
+    // Validate fields
+    if (typeof familyId !== "string" || familyId.trim() === "") {
+      return res.status(400).json({ error: "Valid familyId is required" });
+    }
+    if (typeof assignedTo !== "string" || assignedTo.trim() === "") {
+      return res.status(400).json({ error: "Valid assignedTo is required" });
+    }
+
+    // Validate points
+    const validatedPoints = points || 1;
+    if (
+      typeof validatedPoints !== "number" ||
+      validatedPoints < 0 ||
+      validatedPoints > 1000
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Points must be between 0 and 1000" });
+    }
+
     const instance = await prisma.choreInstance.create({
       data: {
         templateId,
-        familyId,
-        assignedTo,
-        points: points || 1,
+        familyId: familyId.trim(),
+        assignedTo: assignedTo.trim(),
+        points: validatedPoints,
         dueDate: dueDate ? new Date(dueDate) : new Date(),
         status: "pending",
       },
@@ -225,11 +245,30 @@ router.post("/:id/reject", async (req, res) => {
   try {
     const { id } = req.params;
     const { parentId, message } = req.body;
+
     if (!parentId) return res.status(400).json({ error: "parentId required" });
+
+    // Validate parentId format
+    if (typeof parentId !== "string" || parentId.trim() === "") {
+      return res.status(400).json({ error: "Valid parentId is required" });
+    }
+
+    // Validate message length
+    const validatedMessage = message || "Please redo this chore.";
+    if (typeof validatedMessage !== "string") {
+      return res.status(400).json({ error: "Message must be a string" });
+    }
+    if (validatedMessage.length > 500) {
+      return res
+        .status(400)
+        .json({ error: "Message must be 500 characters or less" });
+    }
 
     // Mark approval as rejected
     await prisma.choreApproval.update({
-      where: { instanceId_parentId: { instanceId: id, parentId } },
+      where: {
+        instanceId_parentId: { instanceId: id, parentId: parentId.trim() },
+      },
       data: { status: "rejected", decidedAt: new Date() },
     });
 
@@ -239,7 +278,7 @@ router.post("/:id/reject", async (req, res) => {
       data: {
         status: "pending",
         completedAt: null,
-        rejectionMessage: message || "Please redo this chore.",
+        rejectionMessage: validatedMessage.trim(),
       },
       include: { template: true },
     });

@@ -7,28 +7,33 @@
  * Remove or hide this component before production!
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { DEMO_USERS, getCurrentDemoUser, setDemoUser } from "../../config/demo";
 
-const DEMO_USERS = [
-  { id: "demo-parent", name: "Demo Parent", role: "parent" },
-  { id: "child-1", name: "Demo Child", role: "child" },
-];
+type DemoUser = typeof DEMO_USERS[number];
 
 export function UserSwitcher() {
-  // Initialize localStorage with default user if not set
-  if (!localStorage.getItem("demo-user-id")) {
-    localStorage.setItem("demo-user-id", "child-1");
-    localStorage.setItem("demo-user-role", "child");
-  }
-  
-  const [currentUser, setCurrentUser] = useState(DEMO_USERS[1]); // Start as child
+  const [currentUser, setCurrentUser] = useState<DemoUser>(DEMO_USERS[1]); // Start as child
 
-  const handleSwitch = (user: typeof DEMO_USERS[0]) => {
+  useEffect(() => {
+    // Initialize localStorage with default user if not set
+    const storedUser = getCurrentDemoUser();
+    if (!storedUser) {
+      setDemoUser("child-1", "child");
+    } else {
+      // Update state to match stored user
+      const user = DEMO_USERS.find(u => u.id === storedUser.id);
+      if (user) {
+        setCurrentUser(user);
+      }
+    }
+  }, []);
+
+  const handleSwitch = (user: DemoUser) => {
     setCurrentUser(user);
     
     // Store in localStorage so it persists across page refreshes
-    localStorage.setItem("demo-user-id", user.id);
-    localStorage.setItem("demo-user-role", user.role);
+    setDemoUser(user.id, user.role);
     
     // Reload page to apply changes throughout the app
     window.location.reload();
@@ -36,7 +41,6 @@ export function UserSwitcher() {
 
   // Get current user from localStorage if available
   const storedUserId = localStorage.getItem("demo-user-id");
-  const storedRole = localStorage.getItem("demo-user-role");
   
   const activeUser = storedUserId 
     ? DEMO_USERS.find(u => u.id === storedUserId) || currentUser

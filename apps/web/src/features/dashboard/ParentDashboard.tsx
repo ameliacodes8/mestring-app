@@ -157,11 +157,20 @@ export function ParentDashboard() {
             {pendingApprovals.length > 1 && (
               <button
                 className="btn btn-sm bg-green-600 hover:bg-green-700 ml-auto"
-                onClick={() => {
+                onClick={async () => {
                   if (confirm(`Approve all ${pendingApprovals.length} chores?`)) {
-                    pendingApprovals.forEach((chore: any) => {
-                      approveInstance.mutate(chore.id);
-                    });
+                    // Process approvals ONE AT A TIME to prevent race conditions
+                    // This ensures each approval completes before the next starts
+                    for (const chore of pendingApprovals) {
+                      try {
+                        await api.post(`/chore-instances/${chore.id}/approve`, { parentId: userId });
+                      } catch (error) {
+                        console.error(`Failed to approve ${chore.id}:`, error);
+                      }
+                    }
+                    // Refresh data after all approvals complete
+                    qc.invalidateQueries({ queryKey: ["chore-instances", familyId] });
+                    qc.invalidateQueries({ queryKey: ["leaderboard", familyId] });
                   }
                 }}
                 disabled={approveInstance.isPending}

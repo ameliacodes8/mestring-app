@@ -168,7 +168,7 @@ enum ApprovalPolicy {
 model ChoreTemplate {
   id          String  @id @default(uuid())
   familyId    String
-  family      Family  @relation(fields: [familyId], references: [id])
+  family      Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
   title       String
   description String?
   points      Int     @default(1)
@@ -193,13 +193,13 @@ model ChoreTemplate {
 model ChoreInstance {
   id         String        @id @default(uuid())
   templateId String
-  template   ChoreTemplate @relation(fields: [templateId], references: [id])
+  template   ChoreTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   familyId String
-  family   Family @relation(fields: [familyId], references: [id])
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
 
   assignedTo String
-  assignee   User   @relation(fields: [assignedTo], references: [id])
+  assignee   User   @relation(fields: [assignedTo], references: [id], onDelete: Cascade)
 
   dueDate           DateTime?
   status            ChoreStatus @default(pending)
@@ -218,10 +218,10 @@ model ChoreInstance {
 model ChoreApproval {
   id         String        @id @default(uuid())
   instanceId String
-  instance   ChoreInstance @relation(fields: [instanceId], references: [id])
+  instance   ChoreInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
 
   parentId String
-  parent   User   @relation(fields: [parentId], references: [id])
+  parent   User   @relation(fields: [parentId], references: [id], onDelete: Cascade)
 
   status    ApprovalStatus @default(pending)
   decidedAt DateTime?
@@ -233,7 +233,7 @@ model ChoreApproval {
 model PointsTransaction {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   points    Int
   source    String
   sourceId  String?
